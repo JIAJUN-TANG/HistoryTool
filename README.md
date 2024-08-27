@@ -72,7 +72,11 @@ pip3 install torch torchvision torchaudio --index-url https://download.pytorch.o
 
 ![](./static/tool_install.png)
 
-下载完毕后，将其解压缩至任意目录（尽可能使用全英文目录）。并在解压后的文件根目录（Homepage.py文件所在目录）单击右键，选择在终端中打开，并输入以下代码安装依赖：
+下载完毕后，将其解压缩至任意目录（尽可能使用全英文目录）。并在解压后的文件根目录（Homepage.py文件所在目录）单击右键，选择在终端中打开，并输入以下代码激活虚拟环境后，安装依赖：
+
+```python
+conda activate myenv
+```
 
 ```python
 pip3 install -r requirements.txt
