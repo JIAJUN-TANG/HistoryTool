@@ -2,6 +2,8 @@
 ## 1.使用说明
 使用本工具需按照以下步骤：
 
+**目前macOS暂不可用**
+
 1. 安装Python，配置虚拟环境；
 2. 下载本工具到本地；
 3. 安装相关依赖，即可运行。
@@ -27,7 +29,7 @@
 ![](./static/conda_install2.png)
 
 ### 2.配置虚拟环境
-以创建一个名为myenv（名称可自定义）的Python版本为3.11.8（推荐版本）的miniconda虚拟环境为示例介绍Miniconda的使用。
+以创建一个名为myenv（名称可自定义）的Python版本为3.11.8（推荐版本）的miniconda虚拟环境为示例介绍Miniconda的使用。**请注意：后续终端中输入语句时，一定注意开头为(myenv)而不是(base)，如果不是的话请使用激活语句更改环境**
 
 在Anaconda Prompt中输入以下代码：
 
@@ -45,7 +47,27 @@ conda create -n myenv python=3.11.8
 conda activate myenv
 ```
 
-### 3.下载安装本工具
+### 3.安装Pytorch
+查询显卡的cuda版本，在终端中输入：
+
+```python
+nvidia-smi
+```
+请先看下图左边的NVIDIA-SMI后面的数字，低于400请更新显卡驱动。
+
+![](./static/torch_install.png)
+
+![](./static/torch_install1.png)
+
+红框中为自己的CUDA版本信息，前往[Pytorch官网](https://pytorch.org/)，这里选择的Pytorch的CUDA版本要小于你实际安装的CUDA版本，即按照图中12.6版本的CUDA，选择小于12.6版本的语句复制，如：
+
+```python
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+```
+
+将上述语句复制到终端中运行即可安装Pytorch。
+
+### 4.下载安装本工具
 在本工具的Github页面点击code，之后点击Download ZIP，打包下载到本地。
 
 ![](./static/tool_install.png)
