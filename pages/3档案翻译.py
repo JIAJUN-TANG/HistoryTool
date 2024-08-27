@@ -9,6 +9,7 @@ from openai import OpenAI
 from pathlib import Path
 import requests
 import qianfan
+from qianfan.resources.tools import tokenizer
 import textwrap
 import re
 from surya.model.detection.model import load_model, load_processor
@@ -92,11 +93,20 @@ def get_estimate_token(model, api_key, in_file):
 }
         response = requests.post(
     "https://api.moonshot.cn/v1/tokenizers/estimate-token-count",
-    headers=headers,
-    data=json.dumps(data)
+        headers=headers,
+        data=json.dumps(data)
 )
-    response_data = response.json()
-    total_tokens = response_data.get("data", {}).get("total_tokens")
+        response_data = response.json()
+        total_tokens = response_data.get("data", {}).get("total_tokens")
+    elif model == "文心一言":
+        os.environ["QIANFAN_AK"] = api_key.get("client_id")
+        os.environ["QIANFAN_SK"] = api_key.get("secret_id")
+        text_list=get_ocr(in_file)
+        total_tokens = tokenizer.Tokenizer().count_tokens(
+        text="".join(text_list),
+        mode='remote',
+        model="ernie-speed-128k"
+)  
     return total_tokens
         
 def get_chat_completion(model, api_key, in_file, prompt):
@@ -170,7 +180,7 @@ def save_prompt(new_prompt):
     
     with open(file_path, "w", encoding="utf-8") as file:
         json.dump(prompts, file, ensure_ascii=False)
-
+    
 with open("./static/prompts.txt", "r", encoding="utf-8") as f:
     prompts = f.read()
     prompts = json.loads(prompts)
@@ -187,7 +197,7 @@ st.sidebar.title("历史档案翻译")
 in_model = st.sidebar.selectbox(
     "请选择需要使用的模型",
     options=["ChatGPT", "Kimi", "Gemini", "文心一言"],
-    help="ChatGPT和Gemini模型暂时不可用"
+    help="ChatGPT和Gemini模型暂时不可用，使用文心一言时请勿连接VPN"
 )
 
 if 'api_key' not in st.session_state:
