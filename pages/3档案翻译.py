@@ -12,35 +12,34 @@ import qianfan
 from qianfan.resources.tools import tokenizer
 import textwrap
 import re
-from surya.model.detection.model import load_model, load_processor
-from surya.model.recognition.model import load_model as load_rec_model
-from surya.model.recognition.processor import load_processor as load_rec_processor
-from surya.ocr import run_ocr
-from PIL import Image
-from surya.settings import settings
+# from surya.model.detection.model import load_model, load_processor
+# from surya.model.recognition.model import load_model as load_rec_model
+# from surya.model.recognition.processor import load_processor as load_rec_processor
+# from surya.ocr import run_ocr
+# from surya.settings import settings
 
 # 定义函数
-@st.cache_resource()
-def load_det_cached():
-    checkpoint = settings.DETECTOR_MODEL_CHECKPOINT
-    return load_model(checkpoint=checkpoint), load_processor(checkpoint=checkpoint)
+# @st.cache_resource()
+# def load_det_cached():
+#     checkpoint = settings.DETECTOR_MODEL_CHECKPOINT
+#     return load_model(checkpoint=checkpoint), load_processor(checkpoint=checkpoint)
 
-@st.cache_resource()
-def load_rec_cached():
-    return load_rec_model(), load_rec_processor()
+# @st.cache_resource()
+# def load_rec_cached():
+#     return load_rec_model(), load_rec_processor()
 
-det_model, det_processor = load_det_cached()
-rec_model, rec_processor = load_rec_cached()
+# det_model, det_processor = load_det_cached()
+# rec_model, rec_processor = load_rec_cached()
 
-def get_ocr(in_file):
-    images = [Image.open(in_file)]
-    langs = [["en"]]
-    predictions_by_image = run_ocr(images, langs, det_model, det_processor, rec_model, rec_processor)
-    all_text = []
-    for pred in predictions_by_image:
-        text_lines = [line.text for line in pred.text_lines]
-        all_text.append("\n".join(text_lines))
-    return all_text
+# def get_ocr(in_file):
+#     images = [Image.open(in_file)]
+#     langs = [["en"]]
+#     predictions_by_image = run_ocr(images, langs, det_model, det_processor, rec_model, rec_processor)
+#     all_text = []
+#     for pred in predictions_by_image:
+#         text_lines = [line.text for line in pred.text_lines]
+#         all_text.append("\n".join(text_lines))
+#     return all_text
 
 def open_pdf(pdf_file):
     stream = io.BytesIO(pdf_file.getvalue())
@@ -98,15 +97,15 @@ def get_estimate_token(model, api_key, in_file):
 )
         response_data = response.json()
         total_tokens = response_data.get("data", {}).get("total_tokens")
-    elif model == "文心一言":
-        os.environ["QIANFAN_AK"] = api_key.get("client_id")
-        os.environ["QIANFAN_SK"] = api_key.get("secret_id")
-        text_list=get_ocr(in_file)
-        total_tokens = tokenizer.Tokenizer().count_tokens(
-        text="".join(text_list),
-        mode='remote',
-        model="ernie-speed-128k"
-)  
+#     elif model == "文心一言":
+#         os.environ["QIANFAN_AK"] = api_key.get("client_id")
+#         os.environ["QIANFAN_SK"] = api_key.get("secret_id")
+#         text_list=get_ocr(in_file)
+#         total_tokens = tokenizer.Tokenizer().count_tokens(
+#         text="".join(text_list),
+#         mode='remote',
+#         model="ernie-speed-128k"
+# )  
     return total_tokens
         
 def get_chat_completion(model, api_key, in_file, prompt):
@@ -130,16 +129,16 @@ def get_chat_completion(model, api_key, in_file, prompt):
     temperature = 0
     )
         return completion.choices[0].message.content
-    elif model == "文心一言":
-        os.environ["QIANFAN_AK"] = api_key.get("client_id")
-        os.environ["QIANFAN_SK"] = api_key.get("secret_id")
-        content = get_ocr(in_file)
-        chat_comp = qianfan.ChatCompletion()
-        resp = chat_comp.do(model="ERNIE-Speed-128K",system = "你是一位精通中英等语言的专家，也是一位历史档案研究者，出了结果不要返回其他任何东西", messages=[{"role": "user",
-                                                                "content": f"{prompt}。判断翻译后的最后一句话是否完整，若完整则Completion为1，不完整则为0。将结果以json格式返回，格式为'Content': '此处为翻译后文本', 'Completion':'此处为判断是否完整参数'。内容如下: {content}"}],
-                            temperature = 0.1)
-        result = re.search(r"\{(.*?)\}", resp["body"]["result"]).group(0)
-        return result
+    # elif model == "文心一言":
+    #     os.environ["QIANFAN_AK"] = api_key.get("client_id")
+    #     os.environ["QIANFAN_SK"] = api_key.get("secret_id")
+    #     content = get_ocr(in_file)
+    #     chat_comp = qianfan.ChatCompletion()
+    #     resp = chat_comp.do(model="ERNIE-Speed-128K",system = "你是一位精通中英等语言的专家，也是一位历史档案研究者，出了结果不要返回其他任何东西", messages=[{"role": "user",
+    #                                                             "content": f"{prompt}。判断翻译后的最后一句话是否完整，若完整则Completion为1，不完整则为0。将结果以json格式返回，格式为'Content': '此处为翻译后文本', 'Completion':'此处为判断是否完整参数'。内容如下: {content}"}],
+    #                         temperature = 0.1)
+    #     result = re.search(r"\{(.*?)\}", resp["body"]["result"]).group(0)
+    #     return result
     
 def make_picture(translated_content, file_name, page_number):
     width, height = 568, 876
@@ -147,7 +146,7 @@ def make_picture(translated_content, file_name, page_number):
     text_color = (0, 0, 0)
     image = Image.new('RGB', (width, height), background_color)
     draw = ImageDraw.Draw(image)
-    font_path = r"E:/NJU/SiYuanSongTiRegular/SiYuanSongTiRegular/SourceHanSerifCN-Regular-1.otf"
+    font_path = "./static/SourceHanSerifCN.otf"
     font_size = 18
     font = ImageFont.truetype(font_path, font_size)
     text = translated_content
@@ -217,7 +216,7 @@ translation_button = st.sidebar.button("开始翻译")
 # 右侧主界面
 st.logo("./static/logo.png")
 
-in_file = st.file_uploader("请选择需要处理的历史档案文件", type=["pdf", "png", "jpg", "jpeg"])
+in_file = st.file_uploader("请选择需要处理的历史档案文件")
 if in_file is None:
     st.stop()
 else:

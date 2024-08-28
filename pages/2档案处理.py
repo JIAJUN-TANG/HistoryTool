@@ -2,45 +2,45 @@ import io
 import pypdfium2
 import streamlit as st
 from PIL import Image
-from surya.detection import batch_text_detection
-import surya.languages
-from surya.model.detection.model import load_model, load_processor
-from surya.schema import TextDetectionResult
-from surya.postprocessing.heatmap import draw_polys_on_image
-from surya.settings import settings
+# from surya.detection import batch_text_detection
+# import surya.languages
+# from surya.model.detection.model import load_model, load_processor
+# from surya.schema import TextDetectionResult
+# from surya.postprocessing.heatmap import draw_polys_on_image
+# from surya.settings import settings
 
 # 定义函数
-@st.cache_resource()
-def load_det_cached():
-    checkpoint = settings.DETECTOR_MODEL_CHECKPOINT
-    return load_model(checkpoint=checkpoint), load_processor(checkpoint=checkpoint)
+# @st.cache_resource()
+# def load_det_cached():
+#     checkpoint = settings.DETECTOR_MODEL_CHECKPOINT
+#     return load_model(checkpoint=checkpoint), load_processor(checkpoint=checkpoint)
 
-def open_pdf(pdf_file):
-    stream = io.BytesIO(pdf_file.getvalue())
-    return pypdfium2.PdfDocument(stream)
+# def open_pdf(pdf_file):
+#     stream = io.BytesIO(pdf_file.getvalue())
+#     return pypdfium2.PdfDocument(stream)
 
-@st.cache_data()
-def page_count(pdf_file):
-    doc = open_pdf(pdf_file)
-    return len(doc)
+# @st.cache_data()
+# def page_count(pdf_file):
+#     doc = open_pdf(pdf_file)
+#     return len(doc)
 
-@st.cache_data()
-def get_page_image(pdf_file, page_num, dpi=300):
-    doc = open_pdf(pdf_file)
-    renderer = doc.render(
-        pypdfium2.PdfBitmap.to_pil,
-        page_indices=[page_num - 1],
-        scale=dpi / 72,
-    )
-    png = list(renderer)[0]
-    png_image = png.convert("RGB")
-    return png_image
+# @st.cache_data()
+# def get_page_image(pdf_file, page_num, dpi=300):
+#     doc = open_pdf(pdf_file)
+#     renderer = doc.render(
+#         pypdfium2.PdfBitmap.to_pil,
+#         page_indices=[page_num - 1],
+#         scale=dpi / 72,
+#     )
+#     png = list(renderer)[0]
+#     png_image = png.convert("RGB")
+#     return png_image
 
-def text_detection(img) -> (Image.Image, TextDetectionResult):
-    pred = batch_text_detection([img], det_model, det_processor)[0]
-    polygons = [p.polygon for p in pred.bboxes]
-    det_img = draw_polys_on_image(polygons, img.copy())
-    return det_img, pred
+# def text_detection(img) -> (Image.Image, TextDetectionResult):
+#     pred = batch_text_detection([img], det_model, det_processor)[0]
+#     polygons = [p.polygon for p in pred.bboxes]
+#     det_img = draw_polys_on_image(polygons, img.copy())
+#     return det_img, pred
 
 st.logo("./static/logo.png")
 
@@ -48,7 +48,7 @@ st.logo("./static/logo.png")
 st.set_page_config(layout="centered")
 
 # 加载模型
-det_model, det_processor = load_det_cached()
+# det_model, det_processor = load_det_cached()
 
 # 左侧导航栏
 st.sidebar.title("历史档案处理")
@@ -59,7 +59,7 @@ save_select = st.sidebar.checkbox("自动保存结果")
 click_button = st.sidebar.button("开始运行", key="click_bt")
 
 # 右侧主界面
-in_file = st.file_uploader("请选择需要处理的历史档案文件", type=["pdf", "png", "jpg", "jpeg", "gif", "webp"])
+in_file = st.file_uploader("请选择需要处理的历史档案文件", type=["pdf", "png", "jpg", "jpeg", "gif", "webp"], disabled=True)
 if in_file is None:
     st.stop()
 
