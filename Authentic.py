@@ -29,15 +29,34 @@ def get_authentication(model, api_key):
     elif model == "文心一言":
         client_id = api_key.get("client_id")
         client_secret = api_key.get("secret_id")
-        url = f"https://aip.baidubce.com/oauth/2.0/token?client_id={client_id}&client_secret={client_secret}&grant_type=client_credentials"
+        balance_url = f"https://aip.baidubce.com/oauth/2.0/token?client_id={client_id}&client_secret={client_secret}&grant_type=client_credentials"
         payload = json.dumps("")
         headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
     }
-        response = requests.request("POST", url, headers=headers, data=payload)
+        response = requests.request("POST", balance_url, headers=headers, data=payload)
         if response.status_code == 200:
-            return client_id, client_secret
+            return response.status_code
+        else:
+            return False
+    elif model == "ChatGPT":
+        api_key = api_key
+        balance_url = "https://api.chatanywhere.tech/v1/query/usage_details"
+
+        payload = json.dumps({
+   "model": "gpt-4o-mini%",
+   "hours": 24
+})
+        headers = {
+   "Authorization": api_key,
+   "Content-Type": "application/json"
+}
+        response = requests.request("POST", balance_url, headers=headers, data=payload)
+        if response.status_code == 200:
+            balance_data = response.json()
+            balance_data = dict(balance_data[0]).get("cost") + 30
+            return balance_data
         else:
             return False
     

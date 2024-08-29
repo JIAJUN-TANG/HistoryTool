@@ -1,9 +1,12 @@
 @echo off
 SET "SCRIPT_PATH=%~dp0"
 cd /d "%SCRIPT_PATH%"
-conda activate myenv
+
+REM 尝试激活conda环境，如果失败则直接运行streamlit
+call conda activate myenv >nul 2>&1
 if errorlevel 1 (
-    echo Could not activate conda environment. Please check if 'myenv' is the correct environment name and you have conda initialized properly.
-    exit /b
+    echo Conda environment 'myenv' not found. Running streamlit directly.
+    streamlit run Homepage.py
+) else (
+    streamlit run Homepage.py
 )
-streamlit run Homepage.py

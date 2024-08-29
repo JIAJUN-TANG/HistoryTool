@@ -75,6 +75,42 @@ def save_to_file(file_name, pil_image, page_number):
     
 def get_estimate_token_text(model, api_key, in_file):
     if model == "Kimi":
+        headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {api_key}"
+}
+        data = {
+    "model": "moonshot-v1-128k",
+    "messages": [
+        {"role" : "system", "content" : "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你是一位历史研究的专家。"},
+        {"role": "system", "content": in_file,
+    },
+        {"role": "user", "content": "请你为我翻译这个图像中的文本，尽可能使结果文本的排版和图像接近，只返回翻译结果。"}
+    ]
+}
+        response = requests.post(
+    "https://api.moonshot.cn/v1/tokenizers/estimate-token-count",
+        headers=headers,
+        data=json.dumps(data)
+)
+        response_data = response.json()
+        total_tokens = response_data.get("data", {}).get("total_tokens")
+        return total_tokens
+    elif model == "文心一言":
+        os.environ["QIANFAN_AK"] = api_key.get("client_id")
+        os.environ["QIANFAN_SK"] = api_key.get("secret_id")
+        total_tokens = tokenizer.Tokenizer().count_tokens(
+        text=texts,
+        mode='remote',
+        model="ernie-speed-128k"
+)
+        return total_tokens
+    else:
+        total_tokens = 0
+        return total_tokens
+
+def get_estimate_token(model, api_key, in_file):
+    if model == "Kimi":
         client = OpenAI(
             api_key = api_key,
             base_url = "https://api.moonshot.cn/v1"
@@ -83,11 +119,13 @@ def get_estimate_token_text(model, api_key, in_file):
     "Content-Type": "application/json",
     "Authorization": f"Bearer {api_key}"
 }
+        file_object = client.files.create(file = in_file, purpose="file-extract")
+        file_content = client.files.content(file_id = file_object.id).text
         data = {
     "model": "moonshot-v1-128k",
     "messages": [
         {"role" : "system", "content" : "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你是一位历史研究的专家。"},
-        {"role": "system", "content": in_file,
+        {"role": "system", "content": file_content,
     },
         {"role": "user", "content": "请你为我翻译这个图像中的文本，尽可能使结果文本的排版和图像接近，只返回翻译结果。"}
     ]
@@ -99,47 +137,10 @@ def get_estimate_token_text(model, api_key, in_file):
 )
         response_data = response.json()
         total_tokens = response_data.get("data", {}).get("total_tokens")
-    elif model == "文心一言":
-        os.environ["QIANFAN_AK"] = api_key.get("client_id")
-        os.environ["QIANFAN_SK"] = api_key.get("secret_id")
-        total_tokens = tokenizer.Tokenizer().count_tokens(
-        text=texts,
-        mode='remote',
-        model="ernie-speed-128k"
-)  
-    return total_tokens
-
-def get_estimate_token(model, api_key, in_file):
-    if model == "Kimi":
-        headers = {
-    "Content-Type": "application/json",
-    "Authorization": f"Bearer {api_key}"
-}
-        data = {
-    "model": "moonshot-v1-128k",
-    "messages": [
-        {"role" : "system", "content" : "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你是一位历史研究的专家。"},
-        {"role": "system", "content": in_file,
-    },
-        {"role": "user", "content": "请你为我翻译这个图像中的文本，尽可能使结果文本的排版和图像接近，只返回翻译结果。"}
-    ]
-}
-        response = requests.post(
-    "https://api.moonshot.cn/v1/tokenizers/estimate-token-count",
-        headers=headers,
-        data=json.dumps(data)
-)
-        response_data = response.json()
-        total_tokens = response_data.get("data", {}).get("total_tokens")
-    elif model == "文心一言":
-        os.environ["QIANFAN_AK"] = api_key.get("client_id")
-        os.environ["QIANFAN_SK"] = api_key.get("secret_id")
-        total_tokens = tokenizer.Tokenizer().count_tokens(
-        text=in_file,
-        mode='remote',
-        model="ernie-speed-128k"
-)  
-    return total_tokens
+        return total_tokens
+    else:
+        total_tokens = 0
+        return total_tokens
 
 def get_chat_completion_text(model, api_key, in_file, prompt):
     if model == "Kimi":
@@ -169,6 +170,24 @@ def get_chat_completion_text(model, api_key, in_file, prompt):
                             temperature = 0.1)
         result = re.search(r"\{(.*?)\}", resp["body"]["result"]).group(0)
         return result
+    elif model == "ChatGPT":
+        client = OpenAI(
+    api_key=api_key,
+    base_url="https://api.chatanywhere.com.cn/v1"
+)
+        completion = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role" : "system", "content" : "你会为用户提供安全，有帮助，准确的回答。同时，你是一位历史研究的专家。"},
+        {"role": "system", "content": in_file,
+    },
+        {"role": "user", "content": f"{prompt}。判断翻译后的最后一句话是否完整，若完整则Completion为1，不完整则为0。将结果以json格式返回，格式为'Content': '此处为翻译后文本', 'Completion':'此处为判断是否完整参数'"}
+        
+    ],
+    response_format={"type": "json_object"},
+    temperature = 0
+)   
+        return completion.choices[0].message.content
     
 def get_chat_completion(model, api_key, in_file, prompt):
     if model == "Kimi":
@@ -191,6 +210,10 @@ def get_chat_completion(model, api_key, in_file, prompt):
     temperature = 0
     )
         return completion.choices[0].message.content
+    elif model == "ChatGPT":
+        st.warning("ChatGPT暂不支持图片格式文件处理")
+    elif model == "文心一言":
+        st.warning("文心一言暂不支持图片格式文件处理")
     
 def make_picture(translated_content, file_name, page_number):
     width, height = 568, 876
