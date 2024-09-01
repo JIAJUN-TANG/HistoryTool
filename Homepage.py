@@ -28,9 +28,9 @@ st.markdown(
 st.markdown(
    """
     - Kimi已支持所有功能
-    - ChatGPT已支持所有功能
-    - 文心一言暂时只支持EPUB格式翻译
-    - 通义千文正在开发中
+    - ChatGPT已支持所有功能（不支持token计算和余额查询）
+    - 文心一言已支持所有功能（不支持token计算和余额查询）
+    - 通义千文已支持所有功能（不支持token计算和余额查询）
     - Gemini暂不支持
 """
 )

@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import dashscope
 
 def get_api_key(file_path):
     if not os.path.isfile(file_path):
@@ -43,7 +44,6 @@ def get_authentication(model, api_key):
     elif model == "ChatGPT":
         api_key = api_key
         balance_url = "https://api.chatanywhere.tech/v1/query/usage_details"
-
         payload = json.dumps({
    "model": "gpt-4o-mini%",
    "hours": 24
@@ -54,12 +54,18 @@ def get_authentication(model, api_key):
 }
         response = requests.request("POST", balance_url, headers=headers, data=payload)
         if response.status_code == 200:
-            balance_data = response.json()
-            balance_data = dict(balance_data[0]).get("cost") + 30
-            return balance_data
+            return response.status_code
         else:
             return False
-    
+    elif model == "通义千问":
+        response = dashscope.Tokenization.call(
+        model='qwen-plus',
+        messages=[{'role': 'user', 'content': '你好？'}],
+        api_key=api_key)
+        if response.status_code == 200:
+            return response.status_code
+        else:
+            return False
     else:
         return False
     
