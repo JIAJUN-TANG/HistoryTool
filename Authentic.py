@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import dashscope
+from openai import OpenAI
 
 def get_api_key(file_path):
     if not os.path.isfile(file_path):
@@ -41,7 +42,7 @@ def get_authentication(model, api_key):
             return response.status_code
         else:
             return False
-    elif model == "ChatGPT":
+    elif model == "ChatGPT-转发":
         api_key = api_key
         balance_url = "https://api.chatanywhere.tech/v1/query/usage_details"
         payload = json.dumps({
@@ -57,6 +58,8 @@ def get_authentication(model, api_key):
             return response.status_code
         else:
             return False
+    elif model == "ChatGPT-官方":
+        return True
     elif model == "通义千问":
         response = dashscope.Tokenization.call(
         model='qwen-plus',

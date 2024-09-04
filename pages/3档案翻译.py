@@ -17,34 +17,8 @@ from qianfan.resources.tools import tokenizer
 import textwrap
 from bs4 import BeautifulSoup
 import re
-# from surya.model.detection.model import load_model, load_processor
-# from surya.model.recognition.model import load_model as load_rec_model
-# from surya.model.recognition.processor import load_processor as load_rec_processor
-# from surya.ocr import run_ocr
-# from surya.settings import settings
+import base64
 
-# 定义函数
-# @st.cache_resource()
-# def load_det_cached():
-#     checkpoint = settings.DETECTOR_MODEL_CHECKPOINT
-#     return load_model(checkpoint=checkpoint), load_processor(checkpoint=checkpoint)
-
-# @st.cache_resource()
-# def load_rec_cached():
-#     return load_rec_model(), load_rec_processor()
-
-# det_model, det_processor = load_det_cached()
-# rec_model, rec_processor = load_rec_cached()
-
-# def get_ocr(in_file):
-#     images = [Image.open(in_file)]
-#     langs = [["en"]]
-#     predictions_by_image = run_ocr(images, langs, det_model, det_processor, rec_model, rec_processor)
-#     all_text = []
-#     for pred in predictions_by_image:
-#         text_lines = [line.text for line in pred.text_lines]
-#         all_text.append("\n".join(text_lines))
-#     return all_text
 
 def open_pdf(pdf_file):
     stream = io.BytesIO(pdf_file.getvalue())
@@ -73,7 +47,7 @@ def save_to_file(file_name, pil_image, page_number):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     pil_image.save(output_path, "PNG")
-    
+
 def get_estimate_token_text(model, api_key, in_file):
     if model == "Kimi":
         headers = {
@@ -83,10 +57,10 @@ def get_estimate_token_text(model, api_key, in_file):
         data = {
     "model": "moonshot-v1-128k",
     "messages": [
-        {"role" : "system", "content" : "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你是一位历史研究的专家。"},
+        {"role" : "system", "content" : "你是一位历史研究的专家。"},
         {"role": "system", "content": in_file,
     },
-        {"role": "user", "content": "请你为我翻译这个图像中的文本，尽可能使结果文本的排版和图像接近，只返回翻译结果。"}
+        {"role": "user", "content": "请你为我翻译这个图像中的文本，只返回翻译结果。"}
     ]
 }
         response = requests.post(
@@ -96,15 +70,6 @@ def get_estimate_token_text(model, api_key, in_file):
 )
         response_data = response.json()
         total_tokens = response_data.get("data", {}).get("total_tokens")
-        return total_tokens
-    elif model == "文心一言":
-        os.environ["QIANFAN_AK"] = api_key.get("client_id")
-        os.environ["QIANFAN_SK"] = api_key.get("secret_id")
-        total_tokens = tokenizer.Tokenizer().count_tokens(
-        text=texts,
-        mode="remote",
-        model="ernie-speed-128k"
-)
         return total_tokens
     else:
         total_tokens = 0
@@ -125,10 +90,10 @@ def get_estimate_token(model, api_key, in_file):
         data = {
     "model": "moonshot-v1-128k",
     "messages": [
-        {"role" : "system", "content" : "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你擅长多语言的对话。你会为用户提供安全，有帮助，准确的回答。同时，你是一位历史研究的专家。"},
+        {"role" : "system", "content" : "你是一位历史研究的专家。"},
         {"role": "system", "content": file_content,
     },
-        {"role": "user", "content": "请你为我翻译这个图像中的文本，尽可能使结果文本的排版和图像接近，只返回翻译结果。"}
+        {"role": "user", "content": "请你为我翻译这个图像中的文本，只返回翻译结果。"}
     ]
 }
         response = requests.post(
@@ -144,17 +109,16 @@ def get_estimate_token(model, api_key, in_file):
         return total_tokens
 
 def get_chat_completion_text(model, api_key, in_file, prompt):
-    content = prompt + "判断翻译后的最后一句话是否完整，若完整则Completion为1，不完整则为0。将结果以json格式返回，格式为{'Content': '此处为翻译后文本', 'Completion':'此处为判断是否完整参数'}"
     if model == "Kimi":
         client = OpenAI(
             api_key = api_key,
             base_url = "https://api.moonshot.cn/v1"
         )
         messages = [
-        {"role" : "system", "content" : "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你擅长多语言的对话。你会为用户提供安全，有帮助，准确的回答。同时，你是一位历史研究的专家。"},
+        {"role" : "system", "content" : "你是一位历史研究的专家。"},
         {"role": "system", "content": in_file,
     },
-        {"role": "user", "content": content}
+        {"role": "user", "content": prompt}
     ]
         completion = client.chat.completions.create(
     model = "moonshot-v1-128k",
@@ -167,23 +131,22 @@ def get_chat_completion_text(model, api_key, in_file, prompt):
         os.environ["QIANFAN_AK"] = api_key.get("client_id")
         os.environ["QIANFAN_SK"] = api_key.get("secret_id")
         chat_comp = qianfan.ChatCompletion()
-        resp = chat_comp.do(model="ERNIE-Speed-128K",system = "你是一位擅长多语言的专家，也是一位历史档案研究者，除了结果不要返回其他任何东西", messages=[{"role": "user",
-                                                                "content": content + in_file}],
+        response = chat_comp.do(model="ERNIE-Speed-128K",system = "你是一位擅长多语言的专家，除了结果不要返回其他任何东西", messages=[{"role": "user",
+                                                                "content": prompt + in_file}],
                             temperature = 0.1)
-        result = re.search(r"\{(.*?)\}", resp["body"]["result"]).group(0)
-        return result
-    elif model == "ChatGPT":
+        return response["body"]["result"]
+    elif model == "ChatGPT-转发":
         client = OpenAI(
     api_key=api_key,
     base_url="https://api.chatanywhere.com.cn/v1"
 )
         completion = client.chat.completions.create(
-    model="gpt-4o-mini",
+    model="gpt-4o",
     messages=[
         {"role" : "system", "content" : "你是一位历史研究的专家，精通多种语言。"},
         {"role": "system", "content": in_file,
     },
-        {"role": "user", "content": content}
+        {"role": "user", "content": prompt}
         
     ],
     response_format={"type": "json_object"},
@@ -194,8 +157,8 @@ def get_chat_completion_text(model, api_key, in_file, prompt):
         dashscope.api_key= api_key
         messages = [{"role": "system", "content": "你是一位擅长多语言的专家，也是一位历史档案研究者，除了结果不要返回其他任何东西"},
                     {"role": "system", "content": in_file},
-                    {"role": "user", "content": content}]
-        response = dashscope.Generation.call(model="qwen-turbo",
+                    {"role": "user", "content": prompt}]
+        response = dashscope.Generation.call(model="qwen-max-longtext",
                                messages=messages,
                                temperature=0.1,
                                top_p=0.8,
@@ -203,24 +166,30 @@ def get_chat_completion_text(model, api_key, in_file, prompt):
                                result_format="text",
                                enable_search=True)
         if response.status_code == 200:
-            response = re.sub("\n", "", response.output.text)
-            response = re.sub("\\\\", "", response)
-            response = re.sub(" ", "", response)
             return response
     
+def encode_image(image_path):
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
+    
 def get_chat_completion(model, api_key, in_file, prompt):
+    file_content = encode_image(in_file)
     client = OpenAI(
             api_key = "sk-F2nfwVa0n6KKg1yFNS2e1kxPg8Z8IE7gGMQjd2JnE5CrKMEz",
             base_url = "https://api.moonshot.cn/v1"
         )
-    file_object = client.files.create(file = in_file, purpose="file-extract")
-    file_content = client.files.content(file_id = file_object.id).text
+    file_object = client.files.create(file=in_file, purpose="file-extract")
+    text_content = client.files.content(file_id=file_object.id).text
     if model == "Kimi":
+        client = OpenAI(
+            api_key = api_key,
+            base_url = "https://api.moonshot.cn/v1"
+        )
         messages = [
-        {"role" : "system", "content" : "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你擅长多语言的对话。你会为用户提供安全，有帮助，准确的回答。同时，你是一位历史研究的专家。"},
-        {"role": "system", "content": file_content,
+        {"role" : "system", "content" : "你是一位历史研究的专家，精通多种语言。除了翻译结果外请勿添加任何其他内容。"},
+        {"role": "system", "content": text_content,
     },
-        {"role": "user", "content": f"{prompt}。判断翻译后的最后一句话是否完整，若完整则Completion为1，不完整则为0。将结果以json格式返回，格式为'Content': '此处为翻译后文本', 'Completion':'此处为判断是否完整参数'"}
+        {"role": "user", "content": f"{prompt}。"}
     ]
         completion = client.chat.completions.create(
     model = "moonshot-v1-128k",
@@ -229,50 +198,85 @@ def get_chat_completion(model, api_key, in_file, prompt):
     temperature = 0
     )
         return completion.choices[0].message.content
-    elif model == "ChatGPT":
-        client = OpenAI(
-    api_key=api_key,
-    base_url="https://api.chatanywhere.com.cn/v1"
-)
-        completion = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[
-        {"role" : "system", "content" : "你是一位历史研究的专家，精通多种语言。"},
-        {"role": "system", "content": file_content,
-    },
-        {"role": "user", "content": f"{prompt}。判断翻译后的最后一句话是否完整，若完整则Completion为1，不完整则为0。将结果以json格式返回，格式为'Content': '此处为翻译后文本', 'Completion':'此处为判断是否完整参数'"}
-        
-    ],
-    response_format={"type": "json_object"},
-    temperature = 0
-)   
-        return completion.choices[0].message.content
+    elif model == "ChatGPT-转发":
+        headers = {
+  "Content-Type": "application/json",
+  "Authorization": f"Bearer {api_key}"
+}
+        payload = {
+  "model": "gpt-4o",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": f"你是一位历史研究的专家，精通多种语言。{prompt}。除了翻译结果外请勿添加任何其他内容。"
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": f"data:image/jpeg;base64,{file_content}"
+          }
+        }
+      ]
+    }
+  ],
+}
+        response = requests.post("https://api.chatanywhere.tech/v1/chat/completions", headers=headers, json=payload)
+        response = response.json()["choices"][0]["message"]["content"]
+        return response
+    elif model == "ChatGPT-官方":
+        headers = {
+  "Content-Type": "application/json",
+  "Authorization": f"Bearer {api_key}"
+}
+        payload = {
+  "model": "gpt-4o",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": f"你是一位历史研究的专家，精通多种语言。{prompt}。除了翻译结果外请勿添加任何其他内容。"
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": f"data:image/jpeg;base64,{file_content}"
+          }
+        }
+      ]
+    }
+  ],
+}
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+        response = response.json()["choices"][0]["message"]["content"]
+        return response
     elif model == "文心一言":
         os.environ["QIANFAN_AK"] = api_key.get("client_id")
         os.environ["QIANFAN_SK"] = api_key.get("secret_id")
         chat_comp = qianfan.ChatCompletion()
-        resp = chat_comp.do(model="ERNIE-Speed-128K",system = "你是一位擅长多语言的专家，也是一位历史档案研究者，除了结果不要返回其他任何东西", messages=[{"role": "user",
-                                                                "content": f"{prompt}。判断翻译后的最后一句话是否完整，若完整则Completion为1，不完整则为0。将结果以json格式返回，格式为'Content': '此处为翻译后文本', 'Completion':'此处为判断是否完整参数'" + file_content}],
-                            temperature = 0.1)
-        result = re.search(r"\{(.*?)\}", resp["body"]["result"]).group(0)
-        return result
+        response = chat_comp.do(model="ERNIE-Speed-128K",system = "你是一位擅长多语言的专家，除了结果不要返回其他任何东西", messages=[{"role": "user",
+                                                                "content": f"{prompt}：{text_content}"}],
+                                truncate_overlong_msgs = True,
+                                temperature = 0.1)
+        response = response["body"]["result"]
+        return response
     elif model == "通义千问":
         dashscope.api_key= api_key
-        messages = [{"role": "system", "content": "你是一位擅长多语言的专家，也是一位历史档案研究者，除了结果不要返回其他任何东西"},
-                    {"role": "system", "content": f"{prompt}。判断翻译后的最后一句话是否完整，若完整则Completion为1，不完整则为0。将结果以json格式返回，格式为'Content': '此处为翻译后文本', 'Completion':'此处为判断是否完整参数'"},
-                    {"role": "user", "content": file_content}]
-        response = dashscope.Generation.call(model="qwen-turbo",
+        messages = [{"role": "system", "content": "你是一位擅长多语言的专家，除了结果不要返回其他任何东西"},
+                    {"role": "system", "content": f"{prompt}。"},
+                    {"role": "user", "content": text_content}]
+        response = dashscope.Generation.call(model="qwen-max-longcontext",
                                messages=messages,
                                temperature=0.1,
                                top_p=0.8,
                                top_k=50,
                                result_format="text",
                                enable_search=True)
-        if response.status_code == 200:
-            response = re.sub("\n", "", response.output.text)
-            response = re.sub("\\\\", "", response)
-            response = re.sub(" ", "", response)
-            return response
+        return response.output.text
     
 def make_picture(translated_content, file_name, page_number):
     width, height = 568, 876
@@ -337,8 +341,8 @@ def update_api_key(model):
 st.sidebar.title("历史档案翻译")
 in_model = st.sidebar.selectbox(
     "请选择需要使用的模型",
-    options=["Kimi", "ChatGPT", "Gemini", "文心一言", "通义千问"],
-    help="文心一言、ChatGPT和Gemini模型暂时不可用"
+    options=["Kimi", "ChatGPT-转发", "ChatGPT-官方", "Gemini", "文心一言", "通义千问"],
+    help="ChatGPT-官方需要使用VPN加速，请选择支持地区"
 )
 
 if "api_key" not in st.session_state:
@@ -358,7 +362,7 @@ translation_button = st.sidebar.button("开始翻译")
 # 右侧主界面
 st.logo("./static/logo.png")
 
-in_file = st.file_uploader("请选择需要处理的历史档案文件", type=["pdf", "png", "jpg", "epub"])
+in_file = st.file_uploader("请选择需要处理的历史档案文件", type=["pdf", "png", "png", "epub"])
 if in_file is None:
     st.stop()
 else:
@@ -417,16 +421,12 @@ if calculation_button:
 if translation_button:
     if pil_image == 0:
         translated_content = get_chat_completion_text(in_model, in_api_key, texts, prompt_text)
-        translated_content = json.loads(translated_content)
-        translated_content = translated_content.get("Content")
         with col2:
             display_content = st.markdown(translated_content)
     else:
         save_to_file(file_name, pil_image, page_number)
         image_file = Path(f"./cached_images/{file_name}/{file_name}_{page_number}.png")
         translated_content = get_chat_completion(in_model, in_api_key, image_file, prompt_text)
-        translated_content = json.loads(translated_content)
-        translated_content = translated_content.get("Content")
         with col2:
             make_picture(translated_content, file_name, page_number)
             translated_image = Path(f"./cached_images/{file_name}/{file_name}_{page_number}_translated.png")
