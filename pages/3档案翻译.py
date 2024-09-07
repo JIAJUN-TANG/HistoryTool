@@ -206,12 +206,16 @@ def get_chat_completion(model, api_key, in_file, prompt):
         payload = {
   "model": "gpt-4o",
   "messages": [
+      {
+      "role": "system",
+      "content": "你是一位历史研究的专家，精通多种语言，因此你很熟悉档案翻译。"
+    },
     {
       "role": "user",
       "content": [
         {
           "type": "text",
-          "text": f"你是一位历史研究的专家，精通多种语言。{prompt}。除了翻译结果外请勿添加任何其他内容。"
+          "text": f"{prompt}。除了翻译结果外请勿添加任何其他内容。"
         },
         {
           "type": "image_url",
@@ -222,6 +226,10 @@ def get_chat_completion(model, api_key, in_file, prompt):
       ]
     }
   ],
+  "top_p": 1,
+  "temperature": 0.1,
+  "frequency_penalty": 0,
+  "presence_penalty": 0
 }
         response = requests.post("https://api.chatanywhere.tech/v1/chat/completions", headers=headers, json=payload)
         response = response.json()["choices"][0]["message"]["content"]
@@ -234,12 +242,16 @@ def get_chat_completion(model, api_key, in_file, prompt):
         payload = {
   "model": "gpt-4o",
   "messages": [
+      {
+      "role": "system",
+      "content": "你是一位历史研究的专家，精通多种语言，因此你很熟悉档案翻译。"
+    },
     {
       "role": "user",
       "content": [
         {
           "type": "text",
-          "text": f"你是一位历史研究的专家，精通多种语言。{prompt}。除了翻译结果外请勿添加任何其他内容。"
+          "text": f"{prompt}。除了翻译结果外请勿添加任何其他内容。"
         },
         {
           "type": "image_url",
@@ -250,6 +262,10 @@ def get_chat_completion(model, api_key, in_file, prompt):
       ]
     }
   ],
+  "top_p": 1,
+  "temperature": 0,
+  "frequency_penalty": 0,
+  "presence_penalty": 0
 }
         response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
         response = response.json()["choices"][0]["message"]["content"]
@@ -362,7 +378,7 @@ translation_button = st.sidebar.button("开始翻译")
 # 右侧主界面
 st.logo("./static/logo.png")
 
-in_file = st.file_uploader("请选择需要处理的历史档案文件", type=["pdf", "png", "png", "epub"])
+in_file = st.file_uploader("请选择需要处理的历史档案文件", type=["pdf", "png", "png", "epub", "jpg"])
 if in_file is None:
     st.stop()
 else:
@@ -391,6 +407,7 @@ elif "epub" in filetype:
     pil_image = 0
 else:
     pil_image = Image.open(in_file).convert("RGB")
+    page_number = 1
 
 @st.experimental_dialog("提醒")
 def my_dialog_function():
@@ -428,9 +445,10 @@ if translation_button:
         image_file = Path(f"./cached_images/{file_name}/{file_name}_{page_number}.png")
         translated_content = get_chat_completion(in_model, in_api_key, image_file, prompt_text)
         with col2:
-            make_picture(translated_content, file_name, page_number)
-            translated_image = Path(f"./cached_images/{file_name}/{file_name}_{page_number}_translated.png")
-            translated_image = Image.open(translated_image).convert("RGB")
+            with st.spinner("正在翻译中..."):
+                make_picture(translated_content, file_name, page_number)
+                translated_image = Path(f"./cached_images/{file_name}/{file_name}_{page_number}_translated.png")
+                translated_image = Image.open(translated_image).convert("RGB")
             st.image(translated_image, caption="处理后图像", use_column_width=True)
         st.markdown("---")
         title_t2 = st.subheader("翻译文本")
