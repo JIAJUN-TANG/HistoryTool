@@ -166,24 +166,15 @@ if start_bt:
     with st.spinner('运行Bertopic模型中...'):
         bertopic_model = run_bertopic(filtered_text)
         document_info = bertopic_model.get_document_info(filtered_text)
-<<<<<<< HEAD
         topic_info = bertopic_model.get_topic_info()
         topic_info = topic_info[["Topic", "Count", "Name", "Representation"]]
     st.subheader("主题聚类分布")
     st.dataframe(topic_info)
     st.divider()
-=======
->>>>>>> d1e40775ac7f335bad446f4c3706eccac7d71e43
     st.subheader("档案主题分布")
     st.dataframe(document_info)
     st.divider()
     with st.spinner('绘制可视化图表中...'):
         display_data = display_bertopic(filtered_text, bertopic_model)
     st.subheader("档案主题聚类可视化")
-<<<<<<< HEAD
     st.plotly_chart(display_data)
-=======
-    st.plotly_chart(display_data)
-    st.divider()
-    st.subheader("档案知识图谱")
->>>>>>> d1e40775ac7f335bad446f4c3706eccac7d71e43
