@@ -13,6 +13,7 @@ import dashscope
 from pathlib import Path
 import requests
 import qianfan
+<<<<<<< HEAD
 import textwrap
 from bs4 import BeautifulSoup
 import base64
@@ -41,6 +42,14 @@ def load_rec_cached():
 # 加载模型
 det_model, det_processor = load_det_cached()
 rec_model, rec_processor = load_rec_cached()
+=======
+from qianfan.resources.tools import tokenizer
+import textwrap
+from bs4 import BeautifulSoup
+import re
+import base64
+
+>>>>>>> d1e40775ac7f335bad446f4c3706eccac7d71e43
 
 def open_pdf(pdf_file):
     stream = io.BytesIO(pdf_file.getvalue())
@@ -69,7 +78,10 @@ def save_to_file(file_name, pil_image, page_number):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     pil_image.save(output_path, "PNG")
+<<<<<<< HEAD
     return output_path
+=======
+>>>>>>> d1e40775ac7f335bad446f4c3706eccac7d71e43
 
 def get_estimate_token_text(model, api_key, in_file):
     if model == "Kimi":
@@ -317,6 +329,7 @@ def get_chat_completion(model, api_key, in_file, prompt):
                                enable_search=True)
         return response.output.text
     
+<<<<<<< HEAD
 def draw_polygon_and_text(pil_image, text_lines, output_path):
     image = pil_image
     draw = ImageDraw.Draw(image)
@@ -346,6 +359,27 @@ def draw_polygon_and_text(pil_image, text_lines, output_path):
 
     # 保存图像
     image.save(output_path)
+=======
+def make_picture(translated_content, file_name, page_number):
+    width, height = 568, 876
+    background_color = (255, 255, 255)
+    text_color = (0, 0, 0)
+    image = Image.new("RGB", (width, height), background_color)
+    draw = ImageDraw.Draw(image)
+    font_path = "./static/SourceHanSerifCN.otf"
+    font_size = 18
+    font = ImageFont.truetype(font_path, font_size)
+    text = translated_content
+    lines = textwrap.wrap(text, width=width//font_size)
+    x = 0
+    y = 20
+    for line in lines:
+        left, top, right, bottom = font.getbbox(line)
+        text_height = bottom - top
+        draw.text((x, y), line, font=font, fill=text_color)
+        y = y + text_height + 10
+    image.save(f"./cached_images/{file_name}/{file_name}_{page_number}_translated.png")
+>>>>>>> d1e40775ac7f335bad446f4c3706eccac7d71e43
 
 def chapter_to_markdown(chapter):
     soup = BeautifulSoup(chapter.get_body_content(), "html.parser")
@@ -453,8 +487,11 @@ if pil_image is None:
     st.stop()
 
 col1, col2 = st.columns([.5, .5])
+<<<<<<< HEAD
 col3, col4 = st.columns([.5, .5])
 
+=======
+>>>>>>> d1e40775ac7f335bad446f4c3706eccac7d71e43
 with col1:
     if "epub" in filetype:
         st.markdown(texts)
@@ -476,6 +513,7 @@ if translation_button:
         with col2:
             display_content = st.markdown(translated_content)
     else:
+<<<<<<< HEAD
         image_file = Path(save_to_file(file_name, pil_image, page_number))
         translated_content = get_chat_completion(in_model, in_api_key, image_file, prompt_text)
         with col2:
@@ -494,3 +532,17 @@ if translation_button:
         with col4:
             title_t2 = st.subheader("翻译文本")
             display_content = st.markdown(translated_content)
+=======
+        save_to_file(file_name, pil_image, page_number)
+        image_file = Path(f"./cached_images/{file_name}/{file_name}_{page_number}.png")
+        translated_content = get_chat_completion(in_model, in_api_key, image_file, prompt_text)
+        with col2:
+            with st.spinner("正在翻译中..."):
+                make_picture(translated_content, file_name, page_number)
+                translated_image = Path(f"./cached_images/{file_name}/{file_name}_{page_number}_translated.png")
+                translated_image = Image.open(translated_image).convert("RGB")
+            st.image(translated_image, caption="处理后图像", use_column_width=True)
+        st.markdown("---")
+        title_t2 = st.subheader("翻译文本")
+        display_content = st.markdown(translated_content)
+>>>>>>> d1e40775ac7f335bad446f4c3706eccac7d71e43

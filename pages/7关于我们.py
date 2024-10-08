@@ -1,11 +1,15 @@
 import streamlit as st
 
+<<<<<<< HEAD
 st.set_page_config(layout="wide")
+=======
+>>>>>>> d1e40775ac7f335bad446f4c3706eccac7d71e43
 st.logo("./static/logo.png")
 
 tab1, tab2, tab3 = st.tabs(["关于我们", "联系方式", "致谢"])
 
 with tab1:
+<<<<<<< HEAD
     st.header("南京大学数智文献实验室")
    
     st.subheader("成员单位")
@@ -44,6 +48,23 @@ with tab1:
     with col8.container():
         st.image("./static/jiajuntang.jpg", width=200)
         st.markdown('<div style="width: 100%;"><a href="https://sites.google.com/view/jiajun-tang/homepage">唐嘉骏</a>，南京大学信息管理学院硕士研究生。毕业于中南大学人文学院，获学士学位。研究方向为计算社会科学、数字人文。</div>', unsafe_allow_html=True)
+=======
+    st.header("南京大学历史档案管理系统开发团队")
+   
+    col1, col2 = st.columns([.5, .5], gap = "large")
+    with col1:
+        st.subheader("成员单位")
+        st.image("./static/logo.png")
+    with col2:
+        st.subheader("指导教师")
+        st.markdown('<div style="width: 100%;">张斌，南京大学信息管理学院副教授。</div>', unsafe_allow_html=True)
+        st.markdown('<div style="width: 100%;">李庆，南京大学历史学院副教授。</div>', unsafe_allow_html=True)
+        st.markdown('<div style="width: 100%;">金伯文，南京大学历史学院助理教授。</div>', unsafe_allow_html=True)
+        st.markdown('<div style="width: 100%;">姚念达，南京大学历史学院专职科研岗。</div>', unsafe_allow_html=True)
+        st.divider()
+        st.subheader("主要成员")
+        st.markdown('<div style="width: 100%;">唐嘉骏，南京大学信息管理学院2023级硕士研究生。研究方向为计算社会科学、数字人文。</div>', unsafe_allow_html=True)
+>>>>>>> d1e40775ac7f335bad446f4c3706eccac7d71e43
 
 with tab2:
     st.header("联系方式")
